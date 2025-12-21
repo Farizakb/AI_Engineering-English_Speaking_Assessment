@@ -1,0 +1,33 @@
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+# Copy frontend package files
+COPY ./frontend/package.json package.json
+
+# Install dependencies
+RUN npm install
+
+# Copy frontend source
+COPY ./frontend/src src
+COPY ./frontend/public public
+
+# Build
+RUN npm run build
+
+# Production image
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install serve to run the static build
+RUN npm install -g serve
+
+# Copy built app from builder
+COPY --from=builder /app/build build
+
+# Expose port
+EXPOSE 3000
+
+# Run
+CMD ["serve", "-s", "build", "-l", "3000"]
