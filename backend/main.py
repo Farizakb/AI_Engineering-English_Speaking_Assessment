@@ -34,6 +34,7 @@ load_dotenv()
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 STT_MODEL_SIZE = os.getenv("STT_MODEL_SIZE", "small").strip()
+STT_BACKEND = os.getenv("STT_BACKEND", "whisper").strip().lower()
 MAX_AUDIO_MINUTES = int(os.getenv("MAX_AUDIO_MINUTES", "10"))
 CHUNK_DURATION = int(os.getenv("CHUNK_DURATION", "30"))  # seconds
 SPLIT_THRESHOLD_SECONDS = int(os.getenv("SPLIT_THRESHOLD_SECONDS", "180"))  # 3 min
@@ -119,10 +120,8 @@ def normalize_audio(input_path: str, output_path: str) -> bool:
         return False
 
 
-def get_audio_duration_seconds(file_path: str) -> Optional[float]:
-    """
-    Get duration via ffprobe.
-    """
+def get_audio_duration(file_path: str) -> Optional[float]:
+    """Get duration of audio file in seconds."""
     try:
         cmd = [
             "ffprobe",
@@ -131,11 +130,21 @@ def get_audio_duration_seconds(file_path: str) -> Optional[float]:
             "-of", "default=noprint_wrappers=1:nokey=1",
             file_path
         ]
-        result = subprocess.run(cmd, capture_output=True, check=True, timeout=30)
-        s = result.stdout.decode().strip()
-        return float(s) if s else None
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            timeout=30,
+            check=True
+        )
+        duration = float(result.stdout.decode().strip())
+        return duration
     except Exception as e:
-        logger.error(f"Duration error: {e}")
+        logger.error(f"Error getting duration: {str(e)}")
+        # Log stderr too (helps debugging)
+        try:
+            logger.error(f"ffprobe stderr: {result.stderr.decode(errors='ignore')}")
+        except Exception:
+            pass
         return None
 
 
@@ -209,12 +218,30 @@ def transcribe_audio(wav_path: str) -> str:
     Chunk if longer than SPLIT_THRESHOLD_SECONDS.
     Returns transcript or raises errors via sentinel strings.
     """
-    duration = get_audio_duration_seconds(wav_path)
+    duration = get_audio_duration(wav_path)
     if duration is None:
         return "__DURATION_FAILED__"
 
+    backend = STT_BACKEND
+
+    def transcribe_one(path: str) -> Optional[str]:
+        if backend == "faster-whisper":
+            return transcribe_with_faster_whisper(path)
+        elif backend == "whisper":
+            return transcribe_with_whisper(path)
+        else:
+            # invalid config
+            return None
+        
+        # Validate backend selection early (no silent fallback)
+    if backend not in ("whisper", "faster-whisper"):
+        logger.error(f"Invalid STT_BACKEND='{backend}'. Use 'whisper' or 'faster-whisper'.")
+        return "__STT_NOT_AVAILABLE__"
+
+    # Chunking
+    # Chunking
     if duration > SPLIT_THRESHOLD_SECONDS:
-        logger.info(f"Audio {duration:.1f}s > {SPLIT_THRESHOLD_SECONDS}s, chunking...")
+        logger.info(f"Audio {duration:.1f}s > {SPLIT_THRESHOLD_SECONDS}s, chunking... (backend={backend})")
         chunks = split_wav_to_chunks(wav_path, duration, CHUNK_DURATION)
         if not chunks:
             return "__CHUNKING_FAILED__"
@@ -222,10 +249,11 @@ def transcribe_audio(wav_path: str) -> str:
         parts: List[str] = []
         for c in chunks:
             try:
-                t = transcribe_with_faster_whisper(c)
+                t = transcribe_one(c)
                 if t is None:
-                    t = transcribe_with_whisper(c)
-                if t:
+                    # selected backend missing / failed
+                    return "__STT_NOT_AVAILABLE__"
+                if t.strip():
                     parts.append(t.strip())
             finally:
                 try:
@@ -236,9 +264,8 @@ def transcribe_audio(wav_path: str) -> str:
         return " ".join(parts).strip() if parts else ""
 
     # Short audio
-    t = transcribe_with_faster_whisper(wav_path)
-    if t is None:
-        t = transcribe_with_whisper(wav_path)
+    logger.info(f"Transcribing short audio (backend={backend})")
+    t = transcribe_one(wav_path)
 
     if t is None:
         return "__STT_NOT_AVAILABLE__"
@@ -391,7 +418,7 @@ async def transcribe_submission(submission_id: str):
     if not normalize_audio(original_path, normalized_path):
         raise HTTPException(status_code=400, detail="Audio normalization failed. Audio may be empty/invalid.")
 
-    duration = get_audio_duration_seconds(normalized_path)
+    duration = get_audio_duration(normalized_path)
     if duration is None or duration <= 0:
         raise HTTPException(status_code=400, detail="Could not determine audio duration")
 

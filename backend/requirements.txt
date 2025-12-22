@@ -2,16 +2,11 @@ fastapi==0.104.1
 uvicorn==0.24.0
 python-multipart==0.0.6
 pydantic==2.5.0
-openai==1.3.0
 python-dotenv==1.0.0
-# Optional STT backends (not installed by default in container):
-# - faster-whisper (fast, requires native deps like PyAV/ffmpeg-dev)
-# - whisper (OpenAI whisper Python package) — lighter when using small/tiny models
-# To enable STT inside the Docker image, either install faster-whisper with its
-# system deps, or add `whisper` + `torch` below (may increase image size).
-# For a minimal CPU-only whisper fallback, install these on your host or custom
-# image: whisper, torch
 
-# If you want a whisper fallback, uncomment the following lines and rebuild:
-whisper==1.1.10
+# Newer OpenAI SDK (recommended)
+openai>=1.40.0
+
+# STT fallback
+openai-whisper==20231117
 torch==2.1.0

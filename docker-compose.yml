@@ -9,17 +9,24 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - STT_MODEL_SIZE=${STT_MODEL_SIZE:-small}
-      - MAX_AUDIO_MINUTES=${MAX_AUDIO_MINUTES:-10}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      STT_MODEL_SIZE: ${STT_MODEL_SIZE:-small}
+      MAX_AUDIO_MINUTES: ${MAX_AUDIO_MINUTES:-10}
+      CHUNK_DURATION: ${CHUNK_DURATION:-30}
+      SPLIT_THRESHOLD_SECONDS: ${SPLIT_THRESHOLD_SECONDS:-180}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
     volumes:
+      # ✅ Mount backend source code so changes apply immediately
+      - ./backend:/app
+      # ✅ Persist data outside container
       - ./data:/app/data
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 20s
     restart: unless-stopped
 
   frontend:
