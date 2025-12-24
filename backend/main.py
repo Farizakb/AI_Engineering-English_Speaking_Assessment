@@ -204,7 +204,16 @@ def transcribe_with_whisper(wav_path: str) -> Optional[str]:
 
         model_size = STT_MODEL_SIZE or "small"
         model = whisper.load_model(model_size)
-        result = model.transcribe(wav_path, language="en", task="transcribe")
+        result = model.transcribe(
+            wav_path,
+            language="en",
+            task="transcribe",
+            temperature=0.0,
+            condition_on_previous_text=False,
+            beam_size=1,
+            best_of=1,
+            fp16=False,  # CPU için daha güvenli
+        )
         text = (result.get("text") or "").strip()
         return text
     except Exception as e:
@@ -290,38 +299,38 @@ def generate_feedback(transcript: str, task_topic: str, dialect: str = "US") -> 
     )
 
     user_prompt = f"""
-Task topic: {task_topic}
-Transcript: {transcript}
+        Task topic: {task_topic}
+        Transcript: {transcript}
 
-Return EXACTLY this JSON shape (fill values). Keep it SHORT and SIMPLE.
+        Return EXACTLY this JSON shape (fill values). Keep it SHORT and SIMPLE.
 
-{{
-  "task_topic": "{task_topic}",
-  "student_level_guess": "A2|B1|B2|C1",
-  "teacher_summary": {{
-    "overall": "1-2 sentences",
-    "strengths": ["max 3 short bullets"],
-    "focus_next": ["max 3 short bullets"]
-  }},
-  "student_feedback": {{
-    "quick_message": "2-4 short sentences, friendly tone",
-    "top_fixes": [
-      {{
-        "original": "short exact quote from transcript",
-        "better": "corrected version",
-        "why": "max 12 words"
-      }}
-    ],
-    "better_version": "A cleaned, more natural version (short)."
-  }}
-}}
+        {{
+        "task_topic": "{task_topic}",
+        "student_level_guess": "A2|B1|B2|C1",
+        "teacher_summary": {{
+            "overall": "1-2 sentences",
+            "strengths": ["max 3 short bullets"],
+            "focus_next": ["max 3 short bullets"]
+        }},
+        "student_feedback": {{
+            "quick_message": "2-4 short sentences, friendly tone",
+            "top_fixes": [
+            {{
+                "original": "short exact quote from transcript",
+                "better": "corrected version",
+                "why": "max 12 words"
+            }}
+            ],
+            "better_version": "A cleaned, more natural version (short)."
+        }}
+        }}
 
-Rules:
-- If transcript has <30 words, set top_fixes to [].
-- top_fixes: 3-6 items max.
-- If parts were unclear, mention in teacher_summary.overall.
-- Use exact quotes from the transcript.
-"""
+        Rules:
+        - If transcript has <30 words, set top_fixes to [].
+        - top_fixes: 3-6 items max.
+        - If parts were unclear, mention in teacher_summary.overall.
+        - Use exact quotes from the transcript.
+    """
 
     try:
         # openai==1.3.0 client usage

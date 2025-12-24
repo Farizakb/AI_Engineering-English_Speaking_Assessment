@@ -10,3 +10,4 @@ openai>=1.40.0
 # STT fallback
 openai-whisper==20231117
 torch==2.1.0
+numpy==1.26.4
