@@ -29,16 +29,10 @@ function UploadForm({ onSuccess, apiUrl }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!taskTopic.trim() || !audioFile) {
+    if (!audioFile) {
       setUploadError('Please fill in all fields');
       return;
     }
-
-    if (taskTopic.trim().length < 3) {
-      setUploadError('Task topic must be at least 3 characters');
-      return;
-    }
-
     setUploading(true);
     setUploadError(null);
 
@@ -83,7 +77,6 @@ function UploadForm({ onSuccess, apiUrl }) {
           value={taskTopic}
           onChange={(e) => setTaskTopic(e.target.value)}
           disabled={uploading}
-          required
         />
       </div>
 
