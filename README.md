@@ -332,19 +332,19 @@ Teacher can:
 ### Audio Processing
 - **Supported formats:** .ogg, .opus, .mp3, .m4a, .wav, .webm
 - **Normalization:** FFmpeg converts all to 16kHz mono WAV
-- **Long audio handling:** If >3 minutes, splits into 30s chunks, transcribes each, merges results
+- **Long audio handling:** If >6 minutes, splits into 90s chunks, transcribes each, merges results
 - **Silent audio rejection:** Returns error if audio is too short or contains only silence
 
 ### Speech-to-Text (STT)
 - **Provider:** openai-whisper (OpenAI Whisper package)
-- **Model download:** ~1.4GB for "small" model (auto-downloaded on first use)
+- **Model download:** ~9GB for "small" model (auto-downloaded on first use)
 - **Confidence scoring:**
   - High: 1.5-3.5 words/second + 20+ words
   - Medium: 10-20 words
   - Low: <10 words or unusual pacing
 
 ### Feedback Generation
-- **LLM:** OpenAI GPT-3.5-turbo
+- **LLM:** OpenAI gpt-4o-mini
 - **Prompt engineering:** Strict JSON format + no-invention rules
 - **CEFR levels:** A2 (elementary), B1 (intermediate), B2 (upper-intermediate), C1 (advanced)
 - **Corrections:** Only top 6, with exact quotes from transcript
