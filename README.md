@@ -5,7 +5,7 @@ A simple, working web app for teachers to review students' spoken English submis
 **Features:**
 - 🎤 Upload WhatsApp voice notes (.ogg, .opus, .mp3, .m4a, .wav, .webm)
 - 🔄 Auto-normalize audio to 16kHz mono WAV
-- 🎯 Self-hosted STT using faster-whisper
+- 🎯 Self-hosted STT using openai-whisper
 - 💡 AI-powered feedback from OpenAI
 - 📊 Separate views for teachers and students
 - ⚡ Fast, minimal MVP implementation
@@ -292,7 +292,7 @@ System returns: submission_id = "abc123def456"
 Backend processes:
 1. Validates audio format
 2. Normalizes to 16kHz mono WAV
-3. Runs faster-whisper (small model) on normalized audio
+3. Runs openai-whisper (small model) on normalized audio
 4. Stores transcript JSON
 ```
 
@@ -336,7 +336,7 @@ Teacher can:
 - **Silent audio rejection:** Returns error if audio is too short or contains only silence
 
 ### Speech-to-Text (STT)
-- **Provider:** faster-whisper (OpenAI Whisper optimized)
+- **Provider:** openai-whisper (OpenAI Whisper package)
 - **Model download:** ~1.4GB for "small" model (auto-downloaded on first use)
 - **Confidence scoring:**
   - High: 1.5-3.5 words/second + 20+ words
@@ -484,7 +484,7 @@ curl http://localhost:8000/api/submission/xyz789
 │  ┌─────────────────────────────────┐   │
 │  │ Audio Processing:               │   │
 │  │ - FFmpeg normalization          │   │
-│  │ - faster-whisper STT            │   │
+│  │ - openai-whisper STT            │   │
 │  │ - long audio chunking           │   │
 │  └─────────────────────────────────┘   │
 │                                         │
