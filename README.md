@@ -490,7 +490,7 @@ curl http://localhost:8000/api/submission/xyz789
 │                                         │
 │  ┌─────────────────────────────────┐   │
 │  │ LLM Integration:                │   │
-│  │ - OpenAI GPT-3.5-turbo          │   │
+│  │ - OpenAI gpt-4o-mini            │   │
 │  │ - Structured feedback JSON      │   │
 │  └─────────────────────────────────┘   │
 └──────────────┬──────────────────────────┘
@@ -524,7 +524,7 @@ A: OpenAI charges ~$0.001 per submission (feedback only). STT is free (local).
 A: Currently local storage. TODO: Add S3/Google Cloud support.
 
 **Q: How long does feedback take?**
-A: Transcription: 10-60s depending on audio length. Feedback: 2-5s. Total: 15-90s.
+A: Transcription: 60-300s depending on audio length. Feedback: 2-5s. Total: 70-310s.
 
 **Q: Can teachers edit feedback?**
 A: Not in current MVP. TODO: Add editing interface.
